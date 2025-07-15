@@ -1,6 +1,7 @@
 import os
 import logging
 import requests
+import asyncio
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
@@ -12,7 +13,7 @@ logger = logging.getLogger(__name__)
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("🤖 Bot LBX đã hoạt động! Gõ /btc để xem giá BTC hiện tại hoặc /status để kiểm tra.")
 
-# Lệnh /status (placeholder logic)
+# Lệnh /status
 async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("📊 Bot đang hoạt động bình thường.")
 
@@ -27,8 +28,8 @@ async def btc(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.error(f"Lỗi lấy giá BTC: {e}")
         await update.message.reply_text("⚠️ Không lấy được giá BTC từ Binance.")
 
-# Hàm chính khởi chạy bot
-if __name__ == '__main__':
+# Hàm khởi động bot
+async def main():
     TOKEN = os.getenv("TELEGRAM_TOKEN")
     if not TOKEN:
         raise ValueError("⚠️ Bạn cần thiết lập TELEGRAM_TOKEN trong biến môi trường!")
@@ -39,4 +40,7 @@ if __name__ == '__main__':
     app.add_handler(CommandHandler("btc", btc))
 
     logger.info("🚀 Bot đang chạy...")
-    app.run_polling()
+    await app.run_polling()
+
+if __name__ == '__main__':
+    asyncio.run(main())
