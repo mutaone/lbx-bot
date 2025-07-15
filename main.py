@@ -1,33 +1,42 @@
 import os
 import logging
+import requests
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
-# Lấy token từ biến môi trường
-BOT_TOKEN = os.environ.get("TELEGRAM_TOKEN")
-CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")  # Nếu cần gửi tín hiệu chủ động
-
-# Logging
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
+# Thiết lập logging
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Lệnh /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Bot LBX đã hoạt động ✅")
+    await update.message.reply_text("🤖 Bot LBX đã hoạt động! Gõ /btc để xem giá BTC hiện tại hoặc /status để kiểm tra.")
 
-# Lệnh /status
+# Lệnh /status (placeholder logic)
 async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Đây là ví dụ đơn giản, mày có thể chèn logic lấy tín hiệu real ở đây
-    await update.message.reply_text("⚡ LBX hiện đang theo dõi top 50 coin.")
+    await update.message.reply_text("📊 Bot đang hoạt động bình thường.")
 
-# Hàm chạy bot
-def main():
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
+# Lệnh /btc để lấy giá BTC từ Binance
+async def btc(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        r = requests.get("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT")
+        r.raise_for_status()
+        price = float(r.json()['price'])
+        await update.message.reply_text(f"💰 Giá BTC hiện tại là: ${price:,.2f}")
+    except Exception as e:
+        logger.error(f"Lỗi lấy giá BTC: {e}")
+        await update.message.reply_text("⚠️ Không lấy được giá BTC từ Binance.")
+
+# Hàm chính khởi chạy bot
+if __name__ == '__main__':
+    TOKEN = os.getenv("TELEGRAM_TOKEN")
+    if not TOKEN:
+        raise ValueError("⚠️ Bạn cần thiết lập TELEGRAM_TOKEN trong biến môi trường!")
+
+    app = ApplicationBuilder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("status", status))
-    app.run_polling()
+    app.add_handler(CommandHandler("btc", btc))
 
-if __name__ == "__main__":
-    main()
+    logger.info("🚀 Bot đang chạy...")
+    app.run_polling()
